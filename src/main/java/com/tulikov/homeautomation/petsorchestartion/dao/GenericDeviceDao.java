@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.tulikov.homeautomation.petsorchestartion.dao.impl.SerialPortTemplate;
+import com.tulikov.homeautomation.petsorchestartion.model.Activity;
 import com.tulikov.homeautomation.petsorchestartion.model.Device;
 
 public abstract class GenericDeviceDao<T extends Device> implements DeviceDao<T> {
@@ -73,12 +74,21 @@ public abstract class GenericDeviceDao<T extends Device> implements DeviceDao<T>
   }
 
   private void updateDeviceParams(T device) {
-    int isOn = device.isOn() ? 1 : 0;
-    int isByTime = device.isByTime() ? 1 : 0;
-    long duration = device.getActivity().getDuration().getStandardSeconds();
-    long timeToStart = Duration.between(LocalTime.of(0, 0), device.getActivity().getTimeToStart()).getSeconds();
-    long period = device.getActivity().getPeriod().getSeconds();
-    int threshold = (int)(device.getThreshold() / 100. * 1023);
+    Activity activity = device.getActivity();
+    int isOn = 1;
+    int isByTime = 0;
+
+    long duration = 0, timeToStart = 0, period = 0;
+    int threshold = 0;
+
+    if (activity != null) {
+      duration = activity.getDuration().getStandardSeconds();
+      timeToStart = Duration.between(LocalTime.of(0, 0), activity.getTimeToStart()).getSeconds();
+      period = activity.getPeriod().getSeconds();
+      isByTime = 1;
+    } else {
+      threshold = (int) (device.getThreshold() / 100. * 1023);
+    }
 
     serialPortTemplate.write(String.format("!%s;r%d=%d:m%d=%d:d%d=%d:t%d=%d:T%d=%d:v%d=%d\n", device.getAddress(),
         getActivityNumber(), isOn,
